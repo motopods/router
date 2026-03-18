@@ -113,11 +113,11 @@ function generateManifestModule(
   serverFnsById: Record<string, ServerFn>,
   includeClientReferencedCheck: boolean,
 ): string {
-  // Sort entries by ID to produce a deterministic manifest output, ensuring
-  // reproducible builds across different environments and Node.js versions.
-  // A direct UTF-16 code unit comparison is used instead of localeCompare
-  // because localeCompare delegates to Intl.Collator, whose ordering varies
-  // with the runtime's ICU configuration and can differ between Node versions.
+  // Sort entries by ID so that the generated manifest has a stable, deterministic
+  // order. Without sorting, Object.entries() order depends on insertion order,
+  // which is not guaranteed to be consistent across builds. Non-deterministic
+  // ordering causes the compiled hash of the same source file to change between
+  // builds, breaking content-addressed caching and reproducible deployments.
   const manifestEntries = Object.entries(serverFnsById)
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([id, fn]) => {
