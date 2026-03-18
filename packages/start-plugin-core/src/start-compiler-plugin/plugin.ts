@@ -113,8 +113,13 @@ function generateManifestModule(
   serverFnsById: Record<string, ServerFn>,
   includeClientReferencedCheck: boolean,
 ): string {
+  // Sort entries by ID so that the generated manifest has a stable, deterministic
+  // order. Without sorting, Object.entries() order depends on insertion order,
+  // which is not guaranteed to be consistent across builds. Non-deterministic
+  // ordering causes the compiled hash of the same source file to change between
+  // builds, breaking content-addressed caching and reproducible deployments.
   const manifestEntries = Object.entries(serverFnsById)
-    .sort(([a], [b]) => a.localeCompare(b))
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([id, fn]) => {
       const baseEntry = `'${id}': {
                 functionName: '${fn.functionName}',
